@@ -1,7 +1,9 @@
 package com.example.myretrofit
 
 import android.os.Bundle
+import android.widget.SearchView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.SearchView.OnQueryTextListener
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.myretrofit.adapter.ProductAdapter
 import com.example.myretrofit.databinding.ActivityMainBinding
@@ -40,13 +42,24 @@ class MainActivity : AppCompatActivity() {
             .addConverterFactory(GsonConverterFactory.create()).build()
         val mainApi = retrofit.create(MainApi::class.java)
 
-        CoroutineScope(Dispatchers.IO).launch {
-            val list = mainApi.getAllProducts()
-            runOnUiThread {
-                binding.apply {
-                    adapter.submitList(list.products)
+        binding.sv.setOnQueryTextListener(object : OnQueryTextListener,
+            SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                CoroutineScope(Dispatchers.IO).launch {
+                    val list = query?.let { mainApi.getProductsByName(it) }
+                    runOnUiThread {
+                        binding.apply {
+                            adapter.submitList(list?.products)
+                        }
+                    }
                 }
+                return true
             }
-        }
+
+            override fun onQueryTextChange(newText: String?): Boolean {
+                return true
+            }
+
+        })
     }
 }
